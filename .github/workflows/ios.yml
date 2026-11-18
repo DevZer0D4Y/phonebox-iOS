@@ -19,7 +19,7 @@ permissions:
 jobs:
   ios:
     name: iOS panel (simulator build, unsigned)
-    runs-on: macos-15
+    runs-on: macos-latest
     permissions:
       contents: write # the ios-latest pre-release with the .ipa files
     steps:
