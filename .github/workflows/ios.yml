@@ -69,9 +69,7 @@ jobs:
           REF: ${{ github.ref_name }}
         run: |
           notes="Unsigned iOS build of $REF ($SHA). Sign it with your own certificate (.p12 + .mobileprovision) in a signer app, then install. PhoneBox-unsigned-noext.ipa leaves out the iOS 18 Control Center control, for signers that can't sign app extensions."
-          if gh release view ios-latest >/dev/null 2>&1; then
-            gh release edit ios-latest --prerelease --target "$SHA" --title "iOS app (latest build)" --notes "$notes"
-          else
-            gh release create ios-latest --prerelease --target "$SHA" --title "iOS app (latest build)" --notes "$notes"
-          fi
-          gh release upload ios-latest PhoneBox-unsigned.ipa PhoneBox-unsigned-noext.ipa --clobber
+          # recreated each time, so its tag follows the build instead of staying on an old commit
+          gh release delete ios-latest --cleanup-tag --yes 2>/dev/null || true
+          gh release create ios-latest PhoneBox-unsigned.ipa PhoneBox-unsigned-noext.ipa --prerelease --target "$SHA" \
+            --title "iOS app (latest build)" --notes "$notes"
