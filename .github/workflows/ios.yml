@@ -1,0 +1,51 @@
+name: ios
+
+on:
+  push:
+    paths:
+      - 'ios/**'
+      - 'android/app/src/main/assets/www/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'ios/**'
+      - 'android/app/src/main/assets/www/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: iOS panel (simulator build, unsigned)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Generate the Xcode project
+        working-directory: ios
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Build for the simulator
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild -project PhoneBox.xcodeproj -scheme PhoneBox -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -n 80
+      - name: Build an unsigned device app (.ipa for sideloading)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild -project PhoneBox.xcodeproj -scheme PhoneBox -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build | tail -n 40
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/PhoneBox.app Payload/
+          test -f Payload/PhoneBox.app/www/index.html
+          zip -qr PhoneBox-unsigned.ipa Payload
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: phonebox-ios-unsigned
+          path: ios/PhoneBox-unsigned.ipa

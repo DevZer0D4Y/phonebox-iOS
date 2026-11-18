@@ -217,7 +217,9 @@ app.Use(async (ctx, next) =>
             ctx.Connection.LocalPort == Port ? "USB" : "Wi-Fi", ctx.Request.Headers["X-PhoneBox-WebView"].ToString());
         if (problem is not null) app.Logger.LogWarning("WebView: {Problem}", problem);
     }
-    if (ctx.Request.Headers.TryGetValue("X-PhoneBox-App", out var appVersion) && appVersion.ToString().Length is > 0 and < 32)
+    // the iOS app sends X-PhoneBox-Platform: ios; APK updates are for the Android app only
+    if (ctx.Request.Headers.TryGetValue("X-PhoneBox-App", out var appVersion) && appVersion.ToString().Length is > 0 and < 32
+        && !string.Equals(ctx.Request.Headers["X-PhoneBox-Platform"].ToString(), "ios", StringComparison.OrdinalIgnoreCase))
         UpdateService.AppVersion = appVersion.ToString();
     ctx.Response.Headers.CacheControl = "no-store";
     // only the panel may be framed, and only by the settings page itself (the live preview)
