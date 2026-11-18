@@ -1,0 +1,76 @@
+name: ios-release
+
+# Builds a signed PhoneBox app and uploads it to TestFlight, from where it installs on any iPhone with the TestFlight
+# app. Run it from Actions › ios-release › Run workflow. It needs a paid Apple Developer account and these secrets
+# (Settings › Secrets and variables › Actions); see ios/README.md › "Install it as an app":
+#   APPLE_TEAM_ID       your 10-character team ID (developer.apple.com › Membership)
+#   IOS_BUNDLE_ID       your App ID, e.g. com.yourname.phonebox (created in App Store Connect as an app)
+#   ASC_KEY_ID          App Store Connect API key ID (Users and Access › Integrations › Keys, role App Manager)
+#   ASC_ISSUER_ID       the issuer ID shown on that page
+#   ASC_KEY_P8          the downloaded AuthKey_XXXX.p8, base64-encoded (base64 -i AuthKey_XXXX.p8)
+
+on:
+  workflow_dispatch:
+    inputs:
+      build:
+        description: 'Build number (must grow with every upload)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  testflight:
+    name: Signed build to TestFlight
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the secrets
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          for v in APPLE_TEAM_ID IOS_BUNDLE_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [ -z "${!v}" ]; then echo "::error::Secret $v is not set (see ios/README.md)"; exit 1; fi
+          done
+      - name: Generate the Xcode project
+        working-directory: ios
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Archive (signed through the App Store Connect API key)
+        working-directory: ios
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          BUILD_NUMBER: ${{ inputs.build }}
+        run: |
+          set -o pipefail
+          case "$BUILD_NUMBER" in ''|*[!0-9]*) echo "::error::build must be a number"; exit 1;; esac
+          KEY="$RUNNER_TEMP/AuthKey.p8"
+          echo "$ASC_KEY_P8" | base64 --decode > "$KEY"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          xcodebuild archive -project PhoneBox.xcodeproj -scheme PhoneBox -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/PhoneBox.xcarchive" "${AUTH[@]}" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" PHONEBOX_BUNDLE_ID="$IOS_BUNDLE_ID" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CODE_SIGN_STYLE=Automatic | tail -n 60
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/PhoneBox.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" | tail -n 40
+          rm -f "$KEY"
