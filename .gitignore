@@ -50,3 +50,9 @@ tools/ui-tests/test-results/
 
 *.log
 *.txt
+# iOS (XcodeGen generates the project from ios/project.yml)
+ios/PhoneBox.xcodeproj/
+ios/build/
+ios/Payload/
+ios/*.ipa
+xcuserdata/

@@ -38,7 +38,7 @@ Windows, Linux and macOS. No root, PhoneBox account or cloud service required.</
 <p align="center"><img src="docs/hero-0.6.png" width="900" alt="PhoneBox on three phones showing automation, home and planner pages"><br>
 <sub>Example layouts with demo data.</sub></p>
 
-PhoneBox pairs a full-screen **Android app** with a small **desktop agent**. Build your panel in a browser-based
+PhoneBox pairs a full-screen **Android app** (or the **iOS app** in [`ios/`](ios/README.md)) with a small **desktop agent**. Build your panel in a browser-based
 visual editor: **123 widgets**, **30 templates**, multiple pages and a live preview. Connect several phones with
 their own layouts, or switch one phone between paired computers.
 
