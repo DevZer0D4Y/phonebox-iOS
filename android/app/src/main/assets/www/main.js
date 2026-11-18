@@ -35,7 +35,7 @@ export const $ = (id) => document.getElementById(id);
 // The native bridge (window.Android) is in every frame, sandboxed widgets included, so each call carries a key that only
 // the panel's own frames receive (MainActivity.bridgeKey). This wrapper adds it.
 const BRIDGE = ['battery', 'buzz', 'haptic', 'is24Hour', 'pcs', 'selectPc', 'forgetPc', 'setBrightness', 'setHomeScreen', 'setOrientation',
-  'setPinned', 'setVolumeKeys', 'transport', 'sensors', 'version', 'canListen', 'listen', 'stopListening', 'cancelListening'];
+  'setPinned', 'setVolumeKeys', 'transport', 'sensors', 'sensorNeeds', 'version', 'canListen', 'listen', 'stopListening', 'cancelListening'];
 export const bridge = typeof Android === 'undefined' ? null : Object.fromEntries(BRIDGE.filter((m) => typeof Android[m] === 'function')
   .map((m) => [m, (...args) => Android[m](window.__phoneboxKey || '', ...args)]));
 // Live preview inside the agent's layout editor: the layout comes from the editor (unsaved), not from the agent.
@@ -1687,6 +1687,23 @@ window.onAndroidSensor = (kind, value) => {
   }
 };
 
+/**
+ * Which sensors the panel uses right now, for shells where running one costs something (iOS: room light comes from the
+ * front camera, and proximity monitoring turns the screen off while something is near). Android's sensors are always
+ * on and its bridge has no sensorNeeds, so this does nothing there.
+ */
+let sensorWant = '';
+function sensorDemand() {
+  if (PREVIEW || !bridge?.sensorNeeds) return;
+  const d = cfg.display || {};
+  const light = !!d.autoBrightness || d.nightWhenDark === true;
+  const near = d.proximityWake !== false && (nightOn || dimmed);
+  const key = `${light}/${near}`;
+  if (key === sensorWant) return;
+  sensorWant = key;
+  try { bridge.sensorNeeds(light, near); } catch (_) {}
+}
+
 // ---------------------------------------------------------------- OLED burn-in protection
 // Pixel shift (display.pixelShift): every 2 minutes the panel steps along a small loop, at most 2 px from its place, so
 // edges and text don't sit on the same pixels all day; the night clock, the most static thing on screen, drifts further.
@@ -1755,6 +1772,7 @@ export function tick() {
   if (darkSince && Date.now() - darkSince > 30_000) darkRoom = true;
   const dark = darkRoom && cfg.display?.nightWhenDark === true;
   setNight((isNight(now) || dark) && Date.now() > wakeUntil);
+  sensorDemand();
   if (!PREVIEW && idleDue() && !navQueue.some((r) => r.kind === 'home')) {
     if (curPage === homeIndex()) { closeSheet(); closeOverview(); lastNav = Date.now(); } // only a sheet to close
     else { navQueue.push({ kind: 'home', at: Date.now(), priority: -1 }); pump(); }

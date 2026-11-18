@@ -38,32 +38,51 @@ sideloaded (AltStore, Sideloadly, …).
 
 ## Connect it to the computer
 
-iOS has no `adb reverse`, so an iPhone connects **over Wi-Fi** (or Tailscale):
+### USB (like the Android app)
+
+Plug the iPhone into the computer, tap **Trust** on the phone when asked, and open PhoneBox. That's all: the agent finds
+the phone and connects within a few seconds, and the status line shows **USB**. While on USB the app also fetches the
+Wi-Fi pairing by itself, exactly like the Android app, so it carries on over Wi-Fi when unplugged.
+
+Android does this with `adb reverse`; iOS has no adb, so the agent uses Apple's **usbmuxd** instead (`IosUsb.cs` on the
+agent, `UsbTunnel.swift` in the app). The computer needs Apple's device support:
+
+| Computer | What to install |
+|---|---|
+| macOS | Nothing, it is built in. |
+| Windows | The **Apple Devices** app (Microsoft Store) or iTunes. |
+| Linux | The `usbmuxd` package (`sudo apt install usbmuxd`, `sudo dnf install usbmuxd`, …). |
+
+### Wi-Fi / Tailscale with the QR code
 
 1. On the computer, open PhoneBox settings › **Wi-Fi** and turn on Wi-Fi access.
 2. Choose **Pair a phone over Wi-Fi**. A QR code appears.
 3. Scan it with the iPhone's Camera app. The pairing page opens in Safari; tap **Open in PhoneBox**.
 4. Check that the code in the app matches the one on the computer and tap **Pair**.
-5. Allow **Local Network** access when iOS asks: without it the app cannot reach the computer.
+5. Allow **Local Network** access when iOS asks: without it the app cannot reach the computer over Wi-Fi.
 
-The phone keeps the agent's certificate fingerprint (pinning) and token in the Keychain, exactly like the Android app
-keeps them. Several computers can be paired and switched in the page overview.
+The phone keeps the agent's certificate fingerprint (pinning) and token in the Keychain. Several computers can be paired
+and switched in the page overview, as on Android.
 
-## What differs from Android
+## Feature by feature
 
-The panel is the same; a few things the Android shell does are not possible, or work differently, on iOS:
-
-| Feature | iOS |
+| Android app | iOS app |
 |---|---|
-| USB connection | Not available (needs `adb reverse`). Use Wi-Fi pairing. The app still tries `127.0.0.1:8765` first, so a USB tunnel run on the phone side would be used. |
-| Volume keys flip pages | Yes. iOS gives apps no volume-key events, so the app watches the volume and puts it back after each press. The volume is moved to the middle when it is at either end. |
-| Back button | iOS has no Back button. Use the page overview (long-press) or the swipe gestures of the panel. |
-| Screen pinning | Uses Guided Access. An app can start it by itself only on a supervised device; otherwise triple-click the side button. |
-| Use as the home screen | Not possible on iOS. |
-| Room light sensor / proximity wake | No public API on iOS; the panel's automatic brightness and wave-to-wake are off. |
-| Battery | Level and charging; iOS reports no temperature or charger type. |
-| Brightness | Works. iPhone brightness is system-wide, so the app restores yours whenever it leaves the screen. |
-| Dictation | Apple's speech recognizer. "On the phone only" needs a language with on-device recognition (iOS 13+). |
-| Quick Settings tile | iOS has none. Add the app to the Dock instead. |
-| Keep the screen on | Yes (the idle timer is disabled while the panel is in front). Keep the phone on its charger. |
-| App updates from the agent | Not offered: the agent offers APK updates only to Android (the iOS app sends `X-PhoneBox-Platform: ios`). |
+| Panel, all widgets, templates, pages, themes, languages | The same files (`android/app/src/main/assets/www`). |
+| USB with `adb reverse` | USB through usbmuxd (see above). |
+| Wi-Fi / Tailscale, QR pairing, pinned certificate, several computers | The same. |
+| Live stream from the agent | The same; plugging in moves it to USB at once. |
+| Volume keys flip pages | The same. iOS gives apps no key events, so the app watches the volume and puts it back after each press (it moves the volume to the middle when it is at either end). |
+| Back returns to the first page / opens the overview | Swipe in from the left edge (iOS's back gesture). |
+| Room light sensor: auto brightness, night screen when dark | The front camera's exposure meter, converted to lux. It runs only while one of those options is on; iOS shows its camera indicator then. Nothing is recorded. |
+| Proximity: a wave wakes the night screen | iOS proximity monitoring, on only while the night screen or idle dim is showing (iOS turns the screen off while the hand is near, then the panel wakes). |
+| Brightness | The same. iPhone brightness is system-wide, so yours is restored whenever the panel leaves the screen. |
+| Haptics and notification vibration patterns | Core Haptics. |
+| Dictation widget | Apple's speech recognizer; "on the phone only" uses on-device recognition. |
+| Screen pinning | Guided Access. On a supervised iPhone the app starts it itself; otherwise triple-click the side button once. |
+| Quick Settings tile | Control Center control (iOS 18): Control Center › Add a Control › PhoneBox. |
+| Keep the screen on, full screen, landscape / portrait / auto | The same. |
+| Battery level and charging | The same; iOS reports no battery temperature or charger type. |
+| Use as the home screen (starts after a reboot) | iOS lets no app replace the home screen. For a dedicated panel phone use Guided Access, or Single App Mode on a supervised iPhone (Apple Configurator), which also starts PhoneBox after a restart. |
+| Agent opens the panel when the phone is plugged in | iOS lets no computer start an app. Leave PhoneBox open (Guided Access keeps it there). |
+| App updates from the agent | Not offered (they are APKs); update from Xcode / your sideloading tool. |

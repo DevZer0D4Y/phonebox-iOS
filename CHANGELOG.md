@@ -8,6 +8,17 @@
   from the phone loses its accent bar; and a new option shows each headline over 2 or 3 lines (#108,
   [Vampie](https://github.com/Vampie)).
 
+**iOS app (new)**
+- PhoneBox on iPhone and iPad (iOS 15+), in `ios/`: the same panel as the Android app, with the same native features.
+  USB works through Apple's usbmuxd (the agent opens a tunnel to the app over the cable, as adb reverse does for
+  Android), and Wi-Fi / Tailscale pairing with the QR code. Volume keys flip pages, Back is the swipe in from the left
+  edge, room light comes from the front camera's exposure meter, proximity wakes the night screen, Dictation uses
+  Apple's speech recognizer, screen pinning uses Guided Access, and an iOS 18 Control Center control opens the panel.
+
+**Agent**
+- Tunnels USB connections to the iOS app through usbmuxd (built into macOS; the Apple Devices app or iTunes on Windows;
+  the `usbmuxd` package on Linux). An iPhone is not offered Android app updates.
+
 **Settings**
 - Saving after uploading or removing a shortcut's custom icon no longer fails with "The settings were changed in
   another tab or window". The agent sent the settings version as a number too large for the page to keep exactly, so
