@@ -6,8 +6,8 @@ import UIKit
 
 /// Connection to the PhoneBox agent on the PC (port of the Android shell's AgentLink.kt).
 ///
-/// 1. USB: http://127.0.0.1:8765. Android reaches it through "adb reverse"; an iPhone has no such tunnel, so on iOS this
-///    route only answers when something on the phone forwards that port. It is refused at once otherwise.
+/// 1. USB: http://127.0.0.1:8765, as on Android. There "adb reverse" tunnels it to the computer; on iOS UsbTunnel does
+///    (through Apple's usbmuxd) while the cable is plugged in and the agent runs.
 /// 2. Wi-Fi / Tailscale: https://<pc-address>:<port>. The address list, a token and the SHA-256 fingerprint of the
 ///    agent's self-signed certificate come from pairing (the QR code, or the USB route) and are stored in the Keychain.
 ///    Only that exact certificate is trusted (pinning), and every request carries the token.
@@ -37,6 +37,8 @@ final class AgentLink {
 
     /// Called (on any thread) when the route used for the last request changes.
     var onRouteChange: ((Route) -> Void)?
+    /// Whether the USB tunnel can take a connection now; without one the USB route is not tried.
+    var usbAvailable: () -> Bool = { true }
 
     private let lock = NSLock()
     private var _route: Route = .none
@@ -142,7 +144,7 @@ final class AgentLink {
 
     /// Opens a long-lived GET (the live stream) over the best route; nil when the PC is unreachable.
     func stream(_ path: String) -> (Route, StreamConnection)? {
-        if let url = URL(string: AgentLink.usbBase + path) {
+        if usbAvailable(), let url = URL(string: AgentLink.usbBase + path) {
             let c = StreamConnection(request: makeRequest(url, method: "GET", timeout: AgentLink.streamReadTimeout), pin: nil)
             if c.waitForResponse(timeout: 4) != nil {
                 setRoute(.usb)
@@ -184,8 +186,7 @@ final class AgentLink {
     }
 
     private func usb(_ method: String, _ pathAndQuery: String) -> Reply? {
-        guard let url = URL(string: AgentLink.usbBase + pathAndQuery) else { return nil }
-        // refused instantly when nothing listens on the phone's own port 8765
+        guard usbAvailable(), let url = URL(string: AgentLink.usbBase + pathAndQuery) else { return nil }
         return send(makeRequest(url, method: method, timeout: method == "POST" ? 30 : 4), session: usbSession)
     }
 

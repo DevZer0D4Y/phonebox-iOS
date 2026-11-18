@@ -80,6 +80,7 @@ builder.Services.AddSingleton<CameraFeeds>();
 AddMonitor<GitHubMonitor>(builder.Services);
 AddMonitor<PingMonitor>(builder.Services);
 AddMonitor<AdbReverse>(builder.Services);
+AddMonitor<IosUsb>(builder.Services);
 AddMonitor<SessionLockMonitor>(builder.Services);
 AddMonitor<UpdateService>(builder.Services);
 AddMonitor<PrivacyMonitor>(builder.Services);
@@ -390,7 +391,7 @@ app.MapPost("/api/shortcuts/test", async (HttpRequest req, ConfigStore cfg, ILog
     return err is null ? Results.Ok() : Results.BadRequest(new { error = err });
 });
 
-app.MapGet("/api/info", (AdbReverse adb, ConfigStore cfg) => Results.Json(new
+app.MapGet("/api/info", (AdbReverse adb, IosUsb ios, ConfigStore cfg) => Results.Json(new
 {
     version = AppPaths.Version,
     os = AppPaths.Os,
@@ -398,9 +399,10 @@ app.MapGet("/api/info", (AdbReverse adb, ConfigStore cfg) => Results.Json(new
     logPath = AppPaths.LogPath,
     adb = AdbReverse.FindAdb(cfg.Get().AdbPath),
     // USB (adb) or a live stream from the phone in the last few seconds, which covers Wi-Fi / Tailscale too
-    connected = adb.Connected || ApprovalStore.PhoneConnected,
-    via = adb.Connected ? "USB" : ApprovalStore.PhoneConnected ? "Wi-Fi" : null,
-    devices = adb.AllDevices,
+    connected = adb.Connected || ios.Connected.Length > 0 || ApprovalStore.PhoneConnected,
+    via = adb.Connected || ios.Connected.Length > 0 ? "USB" : ApprovalStore.PhoneConnected ? "Wi-Fi" : null,
+    devices = adb.AllDevices, // adb serials (the "only this phone" filter)
+    iosDevices = ios.Connected,
     appMissing = adb.MissingApp,
     usbProblem = adb.UsbProblem,
     webviewProblem = WebViewDoctor.DiagnoseRecent(PhoneRegistry.All(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()),

@@ -21,6 +21,7 @@ targets:
       - path: PhoneBox
         excludes:
           - "Info.plist"
+      - path: Shared
       # folder reference: lands in the app as PhoneBox.app/www
       - path: ../android/app/src/main/assets/www
         type: folder
@@ -35,3 +36,25 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_STYLE: Automatic
         ENABLE_BITCODE: NO
+    dependencies:
+      # Control Center control (iOS 18); the app itself runs on iOS 15
+      - target: PhoneBoxControl
+        embed: true
+  PhoneBoxControl:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: PhoneBoxControl
+        excludes:
+          - "Info.plist"
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.oxog.phonebox.deskpanel.control
+        PRODUCT_NAME: PhoneBoxControl
+        INFOPLIST_FILE: PhoneBoxControl/Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: YES

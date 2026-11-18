@@ -15,6 +15,8 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
     private lazy var dictation = Dictation { [weak self] script in self?.evaluate(script) }
     private let haptics = Haptics()
     private let volumeKeys = VolumeKeys()
+    private let tunnel = UsbTunnel()
+    private let sensors = Sensors()
     private lazy var scheme = PanelSchemeHandler(link: link)
 
     /// Key for the bridge: WebKit's message handlers are reachable from EVERY frame, including the sandboxed iframe of a
@@ -75,6 +77,21 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
     override func viewDidLoad() {
         super.viewDidLoad()
         link.onRouteChange = { [weak self] _ in DispatchQueue.main.async { self?.pushState() } }
+        let tunnel = self.tunnel
+        link.usbAvailable = { tunnel.ready }
+        // plugged in: move the live stream to USB now (Android's stream does so within a minute)
+        tunnel.onReadyChange = { [weak self] ready in
+            guard let self, ready, self.active, self.link.route != .usb else { return }
+            self.stream.stop()
+            self.stream.start()
+        }
+        sensors.send = { [weak self] kind, value in
+            self?.evaluate("window.onAndroidSensor && window.onAndroidSensor('\(kind)', \(value))")
+        }
+        // Back: iOS has no Back button; the swipe in from the left edge is iOS's back gesture
+        let back = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(backSwipe(_:)))
+        back.edges = .left
+        view.addGestureRecognizer(back)
         volumeKeys.onKey = { [weak self] key in self?.evaluate("window.onAndroidKey && window.onAndroidKey('\(key)')") }
         dictation.onAudioReleased = { [weak self] in self?.volumeKeys.audioReleased() }
 
@@ -113,8 +130,10 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
         guard !active else { return }
         active = true
         UIApplication.shared.isIdleTimerDisabled = true // keep the screen on
+        tunnel.start()
         stream.start()
         volumeKeys.resume()
+        sensors.resume()
         if let w = wantedBrightness {
             systemBrightness = UIScreen.main.brightness
             UIScreen.main.brightness = w
@@ -128,7 +147,9 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
         active = false
         dictation.cancel(0) // the microphone is never left open behind another app or a locked screen
         stream.stop()
+        tunnel.stop()
         volumeKeys.pause()
+        sensors.pause()
         // the brightness of an iPhone is system-wide: give the phone its own back while the panel is away
         if let s = systemBrightness {
             UIScreen.main.brightness = s
@@ -238,12 +259,11 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
     }
 
     private func stateJson() -> String {
-        let sensors = Json.string(["light": false, "proximity": false]) ?? "{}"
         let state: [String: Any] = [
             "battery": Battery.json(),
             "transport": link.route.rawValue,
             "is24Hour": PanelViewController.is24Hour(),
-            "sensors": sensors,
+            "sensors": Sensors.available(),
             "pcs": link.pcsJson(),
             "version": (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "",
             "canListen": dictation.available(),
@@ -290,6 +310,8 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
             setPinned(bool(0))
         case "setOrientation":
             setOrientation(string(0))
+        case "sensorNeeds":
+            sensors.setNeeds(light: bool(0), proximity: bool(1))
         case "selectPc":
             if link.select(string(0)) {
                 stream.stop()
@@ -313,6 +335,13 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
             if id > 0 { dictation.cancel(id) }
         default:
             break
+        }
+    }
+
+    /// Kiosk behaviour: Back does not leave the app, it returns to the first page (window.onAndroidBack).
+    @objc private func backSwipe(_ g: UIScreenEdgePanGestureRecognizer) {
+        if g.state == .ended || g.state == .recognized, g.translation(in: view).x > 40 {
+            evaluate("window.onAndroidBack && window.onAndroidBack()")
         }
     }
 
@@ -415,6 +444,7 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
         transport: function (k) { return own(k) ? state.transport : ''; },
         is24Hour: function (k) { return own(k) ? state.is24Hour : true; },
         sensors: function (k) { return own(k) ? state.sensors : '{}'; },
+        sensorNeeds: function (k, light, near) { if (own(k)) post('sensorNeeds', [!!light, !!near]); },
         pcs: function (k) { return own(k) ? state.pcs : '[]'; },
         version: function (k) { return own(k) ? state.version : ''; },
         canListen: function (k) { return own(k) && state.canListen; },

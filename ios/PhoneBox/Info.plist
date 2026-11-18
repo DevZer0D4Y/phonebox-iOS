@@ -46,6 +46,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>With automatic brightness or "night screen when the room is dark" on, PhoneBox measures the room's light with the front camera's exposure meter. No picture is kept or sent.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>PhoneBox connects to the PhoneBox agent on your computer over Wi-Fi.</string>
 	<key>NSMicrophoneUsageDescription</key>
