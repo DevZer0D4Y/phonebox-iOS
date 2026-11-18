@@ -17,6 +17,7 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
     private let volumeKeys = VolumeKeys()
     private let tunnel = UsbTunnel()
     private let sensors = Sensors()
+    private let location = PhoneLocation()
     private lazy var scheme = PanelSchemeHandler(link: link)
 
     /// Key for the bridge: WebKit's message handlers are reachable from EVERY frame, including the sandboxed iframe of a
@@ -85,6 +86,10 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
             self.stream.stop()
             self.stream.start()
         }
+        location.onChange = { [weak self] in
+            self?.pushState()
+            self?.evaluate("window.onPhoneLocation && window.onPhoneLocation()")
+        }
         sensors.send = { [weak self] kind, value in
             self?.evaluate("window.onAndroidSensor && window.onAndroidSensor('\(kind)', \(value))")
         }
@@ -134,6 +139,7 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
         stream.start()
         volumeKeys.resume()
         sensors.resume()
+        location.resume()
         if let w = wantedBrightness {
             systemBrightness = UIScreen.main.brightness
             UIScreen.main.brightness = w
@@ -150,6 +156,7 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
         tunnel.stop()
         volumeKeys.pause()
         sensors.pause()
+        location.pause()
         // the brightness of an iPhone is system-wide: give the phone its own back while the panel is away
         if let s = systemBrightness {
             UIScreen.main.brightness = s
@@ -267,6 +274,9 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
             "pcs": link.pcsJson(),
             "version": (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "",
             "canListen": dictation.available(),
+            "location": location.json(),
+            // the phone's own languages: WebKit reports only those the app bundle lists
+            "languages": Locale.preferredLanguages,
         ]
         return Json.string(state) ?? "{}"
     }
@@ -310,6 +320,8 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
             setPinned(bool(0))
         case "setOrientation":
             setOrientation(string(0))
+        case "wantLocation":
+            location.want()
         case "sensorNeeds":
             sensors.setNeeds(light: bool(0), proximity: bool(1))
         case "selectPc":
@@ -433,6 +445,14 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
       var key = '__KEY__';
       var state = __STATE__;
       window.__phoneboxKey = key;
+      // "auto" language and date formats follow the iPhone's languages (Settings › General › Language & Region)
+      var langs = state.languages;
+      if (langs && langs.length) {
+        try {
+          Object.defineProperty(Navigator.prototype, 'languages', { get: function () { return langs.slice(); }, configurable: true });
+          Object.defineProperty(Navigator.prototype, 'language', { get: function () { return langs[0]; }, configurable: true });
+        } catch (_) {}
+      }
       window.__phoneboxState = function (s) { for (var k in s) state[k] = s[k]; };
       var post = function (method, args) {
         try { window.webkit.messageHandlers.phonebox.postMessage({ key: key, method: method, args: args }); } catch (_) {}
@@ -444,6 +464,8 @@ final class PanelViewController: UIViewController, WKNavigationDelegate, WKUIDel
         transport: function (k) { return own(k) ? state.transport : ''; },
         is24Hour: function (k) { return own(k) ? state.is24Hour : true; },
         sensors: function (k) { return own(k) ? state.sensors : '{}'; },
+        location: function (k) { return own(k) ? state.location : ''; },
+        wantLocation: function (k) { if (own(k)) post('wantLocation', []); },
         sensorNeeds: function (k, light, near) { if (own(k)) post('sensorNeeds', [!!light, !!near]); },
         pcs: function (k) { return own(k) ? state.pcs : '[]'; },
         version: function (k) { return own(k) ? state.version : ''; },

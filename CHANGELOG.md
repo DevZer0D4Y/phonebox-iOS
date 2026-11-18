@@ -15,6 +15,13 @@
   edge, room light comes from the front camera's exposure meter, proximity wakes the night screen, Dictation uses
   Apple's speech recognizer, screen pinning uses Guided Access, and an iOS 18 Control Center control opens the panel.
 
+- The iOS app shows the weather where the phone is (approximate location, asked for once a weather widget is on a
+  page), and the panel's "auto" language and date formats follow the iPhone's languages.
+
+**Settings**
+- Weather › "Use the phone's own location when it offers one" (on by default); the place set here is the fallback.
+- New settings show clock times the way the phone does ("Follow the phone"); saved settings keep their choice.
+
 **Agent**
 - Tunnels USB connections to the iOS app through usbmuxd (built into macOS; the Apple Devices app or iTunes on Windows;
   the `usbmuxd` package on Linux). An iPhone is not offered Android app updates.

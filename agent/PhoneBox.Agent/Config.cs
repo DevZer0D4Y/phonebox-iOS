@@ -94,6 +94,8 @@ public sealed class WeatherConfig
     public string City { get; set; } = "Tallinn";
     public double Lat { get; set; } = 59.437;
     public double Lon { get; set; } = 24.745;
+    /// <summary>Phones that know where they are (the iOS app) show the weather for their own place; this place is the fallback.</summary>
+    public bool UsePhone { get; set; } = true;
 }
 
 public sealed class PingConfig
@@ -124,9 +126,9 @@ public sealed class DisplayConfig
     /// <summary>The codes the panel and the settings page are translated into (i18n.js).</summary>
     internal static readonly string[] Languages = ["auto", "en", "tr", "de", "fr", "es", "it", "pt", "nl", "pl", "ru", "vi", "zh"];
     public bool ShowSeconds { get; set; } = true;
-    /// <summary>false ("14:05", default), true ("2:05 PM") or "auto" (follow the phone).</summary>
+    /// <summary>false ("14:05"), true ("2:05 PM") or "auto" (follow the phone, the default for new settings).</summary>
     [JsonConverter(typeof(Hour12JsonConverter))]
-    public string Hour12 { get; set; } = "false";
+    public string Hour12 { get; set; } = "auto";
     /// <summary>Return to the first page after this many idle seconds; 0 = never.</summary>
     public int IdleReturnSec { get; set; } = 90;
     /// <summary>Vibrate when a session finishes or needs input.</summary>

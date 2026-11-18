@@ -23,7 +23,17 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
+		<string>tr</string>
+		<string>de</string>
+		<string>fr</string>
+		<string>es</string>
+		<string>it</string>
+		<string>pt</string>
+		<string>nl</string>
+		<string>pl</string>
+		<string>ru</string>
 		<string>vi</string>
+		<string>zh-Hans</string>
 	</array>
 	<!-- Pairing without USB: the QR code opens https://ersinkoc.github.io/phonebox/pair/, which offers phonebox://pair -->
 	<key>CFBundleURLTypes</key>
@@ -53,6 +63,10 @@
 	<string>With automatic brightness or "night screen when the room is dark" on, PhoneBox measures the room's light with the front camera's exposure meter. No picture is kept or sent.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>PhoneBox connects to the PhoneBox agent on your computer over Wi-Fi.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>The weather widgets show the weather where your phone is. Only an approximate location is used.</string>
+	<key>NSLocationDefaultAccuracyReduced</key>
+	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>The Dictation widget listens while its microphone button is on, and types what you say on your computer.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

@@ -35,7 +35,7 @@ export const $ = (id) => document.getElementById(id);
 // The native bridge (window.Android) is in every frame, sandboxed widgets included, so each call carries a key that only
 // the panel's own frames receive (MainActivity.bridgeKey). This wrapper adds it.
 const BRIDGE = ['battery', 'buzz', 'haptic', 'is24Hour', 'pcs', 'selectPc', 'forgetPc', 'setBrightness', 'setHomeScreen', 'setOrientation',
-  'setPinned', 'setVolumeKeys', 'transport', 'sensors', 'sensorNeeds', 'version', 'canListen', 'listen', 'stopListening', 'cancelListening'];
+  'setPinned', 'setVolumeKeys', 'transport', 'sensors', 'sensorNeeds', 'location', 'wantLocation', 'version', 'canListen', 'listen', 'stopListening', 'cancelListening'];
 export const bridge = typeof Android === 'undefined' ? null : Object.fromEntries(BRIDGE.filter((m) => typeof Android[m] === 'function')
   .map((m) => [m, (...args) => Android[m](window.__phoneboxKey || '', ...args)]));
 // Live preview inside the agent's layout editor: the layout comes from the editor (unsaved), not from the agent.
@@ -392,11 +392,46 @@ export const wxIcon = (code, day = 1) => { const x = WX[code] || [null, '🌡️
 /** The condition in the panel's language, or an em dash for a code Open-Meteo does not list. */
 export const wxText = (code) => { const x = WX[code]; return x ? t(x[0]) : '—'; };
 
+/**
+ * The phone's own place ({ city, lat, lon }) from shells that offer one (iOS), or null. Coordinates come rounded to
+ * about a kilometre; the city name is the phone's, in its language.
+ */
+function phonePlace() {
+  if (PREVIEW || !bridge?.location) return null;
+  try {
+    const p = JSON.parse(bridge.location() || 'null');
+    if (p && Number.isFinite(p.lat) && Number.isFinite(p.lon)) return { city: String(p.city || ''), lat: p.lat, lon: p.lon };
+  } catch (_) {}
+  return null;
+}
+
+/**
+ * Where the weather is for: the phone's own location when it offers one and weather.usePhone (on by default) allows
+ * it, otherwise the place chosen in the settings.
+ */
+export function wxPlace() {
+  const set = cfg.weather || DEFAULT_CFG.weather;
+  if (set.usePhone !== false) {
+    const p = phonePlace();
+    if (p) return { ...p, city: p.city || set.city };
+  }
+  return set;
+}
+
+/** The shell found the phone's place (or a new one): forecast and widgets follow. */
+window.onPhoneLocation = () => { loadWeather(); emit('weather'); };
+
 let weatherRetry = 0;
 let weatherFor = ''; // the location the forecast in D.weather belongs to
-const weatherKey = () => { const { lat, lon } = cfg.weather || DEFAULT_CFG.weather; return `v3:${lat},${lon}`; };
+const weatherKey = () => { const { lat, lon } = wxPlace(); return `v3:${lat},${lon}`; };
+let locationAsked = false;
 export async function loadWeather(force = false) {
-  const { lat, lon } = cfg.weather || DEFAULT_CFG.weather;
+  // ask the shell for the phone's location the first time the weather is needed (it may ask the user once)
+  if (!locationAsked && !PREVIEW && bridge?.wantLocation && (cfg.weather || {}).usePhone !== false && anyNeeds('weather')) {
+    locationAsked = true;
+    try { bridge.wantLocation(); } catch (_) {}
+  }
+  const { lat, lon } = wxPlace();
   const key = weatherKey();
   const cached = store.get('wx', null);
   // a new place starts from its own cache or from "Loading…", never from the previous place's forecast
@@ -440,7 +475,7 @@ export function wxLines() {
   return {
     icon: wxIcon(c.weather_code, c.is_day),
     temp: Math.round(c.temperature_2m) + '°',
-    desc: `${desc} · ${cfg.weather?.city || ''}`,
+    desc: `${desc} · ${wxPlace().city || ''}`,
     range: (hi != null ? `↑${hi}° ↓${lo}° · ` : '') + t('wx.feelsLike', { deg: Math.round(c.apparent_temperature) }),
   };
 }

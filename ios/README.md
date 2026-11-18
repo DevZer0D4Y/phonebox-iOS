@@ -119,6 +119,8 @@ and switched in the page overview, as on Android.
 | Screen pinning | Guided Access. On a supervised iPhone the app starts it itself; otherwise triple-click the side button once. |
 | Quick Settings tile | Control Center control (iOS 18): Control Center › Add a Control › PhoneBox. |
 | Keep the screen on, full screen, landscape / portrait / auto | The same. |
+| Weather for the place set on the computer | The weather where the iPhone is (approximate location, like the Weather app's "My Location"; the computer's place is the fallback, and Settings › Weather can turn it off). |
+| Time zone, 12/24-hour, language and date formats from the phone | The same (12/24-hour follows the phone when the clock setting is "Follow the phone", the default for new settings). |
 | Battery level and charging | The same; iOS reports no battery temperature or charger type. |
 | Use as the home screen (starts after a reboot) | iOS lets no app replace the home screen. For a dedicated panel phone use Guided Access, or Single App Mode on a supervised iPhone (Apple Configurator), which also starts PhoneBox after a restart. |
 | Agent opens the panel when the phone is plugged in | iOS lets no computer start an app. Leave PhoneBox open (Guided Access keeps it there). |

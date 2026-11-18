@@ -437,7 +437,7 @@ public class ConfigConcurrencyTests
 public class Hour12ConfigTests
 {
     [Theory]
-    [InlineData("{}", "false", JsonValueKind.False)]
+    [InlineData("{}", "auto", JsonValueKind.String)] // new settings follow the phone
     [InlineData("""{"display":{"hour12":false}}""", "false", JsonValueKind.False)]
     [InlineData("""{"display":{"hour12":true}}""", "true", JsonValueKind.True)]
     [InlineData("""{"display":{"hour12":"true"}}""", "true", JsonValueKind.True)]
@@ -469,5 +469,17 @@ public class Hour12ConfigTests
             File.Delete(path);
             File.Delete(path + ".bak");
         }
+    }
+}
+
+public class WeatherUsePhoneTests
+{
+    [Fact]
+    public void ThePhonesOwnLocationIsOnUnlessTurnedOff()
+    {
+        var opts = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+        Assert.True(System.Text.Json.JsonSerializer.Deserialize<PhoneBox.Agent.WeatherConfig>("""{"city":"Tallinn","lat":59.4,"lon":24.7}""", opts)!.UsePhone);
+        Assert.False(System.Text.Json.JsonSerializer.Deserialize<PhoneBox.Agent.WeatherConfig>("""{"usePhone":false}""", opts)!.UsePhone);
+        Assert.Contains("\"usePhone\":true", System.Text.Json.JsonSerializer.Serialize(new PhoneBox.Agent.WeatherConfig(), opts));
     }
 }
