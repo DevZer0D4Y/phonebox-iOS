@@ -103,15 +103,7 @@ Vuốt, chạm vào các chấm chỉ trang hoặc dùng phím âm lượng củ
 
 - **Tải thủ công:** giải nén agent dành cho hệ điều hành của bạn từ [trang phát hành](https://github.com/ersinkoc/phonebox/releases/latest)
   và chạy nó. Cài APK lên điện thoại. Mã kiểm tra và thông tin nguồn gốc bản dựng đi kèm với các tệp của bản phát hành.
-- **Scoop (Windows):**
-
-  ```powershell
-  scoop bucket add phonebox https://github.com/ersinkoc/phonebox
-  scoop install main/adb phonebox/phonebox
-  ```
-
 - **Từ mã nguồn:** xem [hướng dẫn cài đặt](SETUP.md#other-ways-to-install) và [hướng dẫn phát triển](DEVELOPMENT.md).
-- **winget:** các manifest đã được chuẩn bị sẵn trong [packaging/winget](../packaging/winget); xem hướng dẫn cài đặt để biết chi tiết.
 
 </details>
 
@@ -156,8 +148,6 @@ bản dựng phát hành. Xem [bảng tương thích đầy đủ](SETUP.md#what
 | [Đóng góp](../CONTRIBUTING.md) | Phạm vi đóng góp, kỳ vọng khi review, quyền riêng tư và các kiểm tra bắt buộc |
 | [Nhật ký thay đổi](../CHANGELOG.md) | Lịch sử phát hành và các thay đổi chưa phát hành |
 | [Danh sách kiểm tra phát hành](RELEASING.md) | Quy trình dựng, ký số và công bố của người bảo trì |
-
-Các [tiện ích bổ sung cho UMIDIGI BISON](../extras/umidigi-bison) chứa bản tinh chỉnh có thể hoàn tác, không cần root, từng được dùng trên chiếc điện thoại phát triển gốc.
 
 ## Bảo mật & quyền riêng tư
 
@@ -205,22 +195,6 @@ Ký mã miễn phí do [SignPath.io](https://about.signpath.io/) cung cấp, ch�
 Những người đã thử nghiệm PhoneBox trên phần cứng của chính họ:
 
 - [anandyakshit](https://github.com/anandyakshit): hỗ trợ Android 7, trên một chiếc điện thoại Android 7.1.1 ([#73](https://github.com/ersinkoc/phonebox/issues/73)).
-
-## Nhà tài trợ
-
-<!-- sponsor: WrongStack -->
-<p align="center">
-  <a href="https://wrongstack.com">
-    <img src="sponsors/wrongstack.svg" width="900" alt="Được tài trợ bởi WrongStack — lập trình bằng AI mã nguồn mở với bộ nhớ bền vững và quy trình đa agent. Khám phá tại wrongstack.com.">
-  </a>
-</p>
-<p align="center">
-  <strong>Được hỗ trợ bởi <a href="https://wrongstack.com">WrongStack</a></strong> ·
-  Một agent lập trình bằng AI mã nguồn mở có khả năng ghi nhớ codebase của bạn.<br>
-  <a href="https://wrongstack.com"><strong>Khám phá WrongStack →</strong></a> ·
-  <a href="https://github.com/wrongstack/wrongstack"><strong>Xem trên GitHub &amp; tặng một ngôi sao ★</strong></a>
-</p>
-<!-- /sponsor: WrongStack -->
 
 ## Lịch sử ngôi sao
 

@@ -110,15 +110,7 @@ Swipe, tap the page dots or use the phone's volume keys to move between pages.
 
 - **Manual download:** unzip the agent for your system from the [release page](https://github.com/ersinkoc/phonebox/releases/latest)
   and run it. Install the APK on the phone. Checksums and build provenance accompany the release assets.
-- **Scoop (Windows):**
-
-  ```powershell
-  scoop bucket add phonebox https://github.com/ersinkoc/phonebox
-  scoop install main/adb phonebox/phonebox
-  ```
-
 - **From source:** see the [installation guide](docs/SETUP.md#other-ways-to-install) and [development guide](docs/DEVELOPMENT.md).
-- **winget:** manifests are prepared in [packaging/winget](packaging/winget); see the installation guide for details.
 
 </details>
 
@@ -164,8 +156,6 @@ release builds. See the [full compatibility table](docs/SETUP.md#what-works-wher
 | [Contributing](CONTRIBUTING.md) | Contribution scope, review expectations, privacy and required checks |
 | [Changelog](CHANGELOG.md) | Release history and unreleased changes |
 | [Release checklist](docs/RELEASING.md) | Maintainer build, signing and publication workflow |
-
-The [UMIDIGI BISON extras](extras/umidigi-bison) contain the reversible, no-root tune-up used on the original development phone.
 
 ## Security & privacy
 
@@ -213,22 +203,6 @@ Free code signing provided by [SignPath.io](https://about.signpath.io/), certifi
 People who tested PhoneBox on their own hardware:
 
 - [anandyakshit](https://github.com/anandyakshit): Android 7 support, on an Android 7.1.1 phone ([#73](https://github.com/ersinkoc/phonebox/issues/73)).
-
-## Sponsor
-
-<!-- sponsor: WrongStack -->
-<p align="center">
-  <a href="https://wrongstack.com">
-    <img src="docs/sponsors/wrongstack.svg" width="900" alt="Sponsored by WrongStack — open-source AI coding with durable memory and multi-agent workflows. Explore wrongstack.com.">
-  </a>
-</p>
-<p align="center">
-  <strong>Supported by <a href="https://wrongstack.com">WrongStack</a></strong> ·
-  An open-source AI coding agent that remembers your codebase.<br>
-  <a href="https://wrongstack.com"><strong>Explore WrongStack →</strong></a> ·
-  <a href="https://github.com/wrongstack/wrongstack"><strong>View on GitHub &amp; give it a star ★</strong></a>
-</p>
-<!-- /sponsor: WrongStack -->
 
 ## Star History
 

@@ -107,8 +107,8 @@ jobs:
       - name: Sign macOS apphost ad hoc
         if: startsWith(matrix.rid, 'osx-')
         run: codesign --force --sign - out/PhoneBoxAgent
-      # Authenticode signing through SignPath Foundation, before the smoke test, the zip, the checksums, the attestation
-      # and the Scoop/winget hash, which all cover the signed file. It is on while the repository variable
+      # Authenticode signing through SignPath Foundation, before the smoke test, the zip, the checksums and the attestation,
+      # which all cover the signed file. It is on while the repository variable
       # SIGNPATH_SIGNING_POLICY names a policy (release-signing); each request waits for a manual approval in SignPath.
       - name: Sign PhoneBoxAgent.exe (SignPath)
         if: matrix.rid == 'win-x64' && vars.SIGNPATH_SIGNING_POLICY != ''
@@ -186,27 +186,3 @@ jobs:
         run: |
           v="${{ needs.version.outputs.version }}"
           gh release create "v$v" dist/* --title "PhoneBox $v" --notes-file notes.md --target "${{ github.sha }}" ${{ inputs.draft && '--draft' || '' }}
-      # a draft's downloads are not public yet, so the package manifests follow only published releases
-      - name: Update the Scoop bucket and the winget manifests
-        if: ${{ !inputs.draft }}
-        run: |
-          v="${{ needs.version.outputs.version }}"
-          sha=$(sha256sum "dist/PhoneBoxAgent-$v-win-x64.zip" | cut -d' ' -f1)
-          python3 - "$v" "$sha" <<'PY'
-          import json, sys
-          v, sha = sys.argv[1], sys.argv[2]
-          p = 'bucket/phonebox.json'
-          m = json.load(open(p, encoding='utf-8'))
-          m['version'] = v
-          m['architecture']['64bit']['url'] = f'https://github.com/ersinkoc/phonebox/releases/download/v{v}/PhoneBoxAgent-{v}-win-x64.zip'
-          m['architecture']['64bit']['hash'] = sha
-          # the agent is self-contained since 0.9.7: no .NET runtime to suggest
-          m.get('suggest', {}).pop('.NET Desktop Runtime 10', None)
-          open(p, 'w', encoding='utf-8').write(json.dumps(m, indent=4, ensure_ascii=False) + '\n')
-          PY
-          python3 packaging/winget/make-manifests.py "$v" "$sha"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add bucket/phonebox.json packaging/winget/manifests
-          git commit -m "Scoop and winget manifests for $v"
-          git push origin HEAD:main
