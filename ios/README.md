@@ -56,6 +56,17 @@ any App Store app, through Apple's TestFlight app, and it never expires.
 5. After Apple has processed it (a few minutes), add yourself as a tester in App Store Connect › TestFlight and install
    PhoneBox from the TestFlight app on the iPhone.
 
+**Your own signing certificate (.p12 + .mobileprovision, e.g. from a certificate service).** Every build is published
+as a pre-release, with fixed links:
+
+- `https://github.com/<owner>/<repo>/releases/download/ios-latest/PhoneBox-unsigned.ipa`
+- `https://github.com/<owner>/<repo>/releases/download/ios-latest/PhoneBox-unsigned-noext.ipa` (without the iOS 18
+  Control Center control, for signers or profiles that can't sign app extensions)
+
+Import the link into your signer app (ESign, Feather, Scarlet, your certificate provider's signer), sign it with your
+certificate and install. The app asks for no special entitlements, so a wildcard profile works; keep or change the
+bundle ID as you like. If the certificate is revoked, the app stops opening until you sign it again with a new one.
+
 **Sideloading with a free Apple ID.** Download `phonebox-ios-unsigned` from the latest **ios** run in Actions and
 install the `.ipa` with [Sideloadly](https://sideloadly.io) or [AltStore](https://altstore.io). Apps signed with a free
 Apple ID stop opening after 7 days and must be re-installed (AltStore does that by itself).

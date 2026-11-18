@@ -20,6 +20,8 @@ jobs:
   ios:
     name: iOS panel (simulator build, unsigned)
     runs-on: macos-15
+    permissions:
+      contents: write # the ios-latest pre-release with the .ipa files
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Generate the Xcode project
@@ -45,7 +47,31 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/PhoneBox.app Payload/
           test -f Payload/PhoneBox.app/www/index.html
           zip -qr PhoneBox-unsigned.ipa Payload
+          # the same without the Control Center control (an app extension): for signers or certificates that
+          # can't sign extensions
+          rm -rf Payload/PhoneBox.app/PlugIns
+          zip -qr PhoneBox-unsigned-noext.ipa Payload
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phonebox-ios-unsigned
-          path: ios/PhoneBox-unsigned.ipa
+          path: |
+            ios/PhoneBox-unsigned.ipa
+            ios/PhoneBox-unsigned-noext.ipa
+      # A fixed download link for signing on the phone (ESign, Feather, Scarlet, a Kravasign signer, …):
+      # https://github.com/<owner>/<repo>/releases/download/ios-latest/PhoneBox-unsigned.ipa
+      - name: Publish to the ios-latest pre-release
+        if: github.event_name != 'pull_request'
+        working-directory: ios
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref_name }}
+        run: |
+          notes="Unsigned iOS build of $REF ($SHA). Sign it with your own certificate (.p12 + .mobileprovision) in a signer app, then install. PhoneBox-unsigned-noext.ipa leaves out the iOS 18 Control Center control, for signers that can't sign app extensions."
+          if gh release view ios-latest >/dev/null 2>&1; then
+            gh release edit ios-latest --prerelease --target "$SHA" --title "iOS app (latest build)" --notes "$notes"
+          else
+            gh release create ios-latest --prerelease --target "$SHA" --title "iOS app (latest build)" --notes "$notes"
+          fi
+          gh release upload ios-latest PhoneBox-unsigned.ipa PhoneBox-unsigned-noext.ipa --clobber
