@@ -5,7 +5,8 @@ name: ios-release
 # (Settings › Secrets and variables › Actions); see ios/README.md › "Install it as an app":
 #   APPLE_TEAM_ID       your 10-character team ID (developer.apple.com › Membership)
 #   IOS_BUNDLE_ID       your App ID, e.g. com.yourname.phonebox (created in App Store Connect as an app)
-#   ASC_KEY_ID          App Store Connect API key ID (Users and Access › Integrations › Keys, role App Manager)
+#   ASC_KEY_ID          App Store Connect API key ID (Users and Access › Integrations › Keys, role Admin: Xcode
+#                       creates the distribution certificate and profiles with it)
 #   ASC_ISSUER_ID       the issuer ID shown on that page
 #   ASC_KEY_P8          the downloaded AuthKey_XXXX.p8, base64-encoded (base64 -i AuthKey_XXXX.p8)
 
@@ -13,8 +14,11 @@ on:
   workflow_dispatch:
     inputs:
       build:
-        description: 'Build number (must grow with every upload)'
-        required: true
+        description: 'Build number (must grow with every upload; empty = this run number)'
+        required: false
+  # a tag like ios-v0.9.19-1 also starts it, from any branch (Run workflow is offered only once this file is on main)
+  push:
+    tags: ['ios-v*']
 
 permissions:
   contents: read
@@ -49,7 +53,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
-          BUILD_NUMBER: ${{ inputs.build }}
+          BUILD_NUMBER: ${{ inputs.build || github.run_number }}
         run: |
           set -o pipefail
           case "$BUILD_NUMBER" in ''|*[!0-9]*) echo "::error::build must be a number"; exit 1;; esac

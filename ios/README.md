@@ -47,10 +47,12 @@ any App Store app, through Apple's TestFlight app, and it never expires.
 1. In [App Store Connect](https://appstoreconnect.apple.com) › Apps, create a new app with your own bundle ID, e.g.
    `com.yourname.phonebox` (register it, and `com.yourname.phonebox.control` for the Control Center control, under
    Certificates, Identifiers & Profiles if it isn't offered).
-2. Users and Access › Integrations › App Store Connect API: create a key with the **App Manager** role and download it.
+2. Users and Access › Integrations › App Store Connect API: create a key with the **Admin** role (Xcode creates the signing certificate and profiles with it; your existing
+   certificate is not needed) and download it.
 3. In this GitHub repository, Settings › Secrets and variables › Actions, add `APPLE_TEAM_ID`, `IOS_BUNDLE_ID`,
    `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the .p8 file, base64-encoded: `base64 -i AuthKey_XXXX.p8`).
-4. Actions › **ios-release** › Run workflow, with a build number (1, then 2, …).
+4. Start a build: push a tag such as `ios-v1` (`git tag ios-v1 && git push origin ios-v1`), or, once this is merged
+   into main, Actions › **ios-release** › Run workflow. Every build gets the next number by itself.
 5. After Apple has processed it (a few minutes), add yourself as a tester in App Store Connect › TestFlight and install
    PhoneBox from the TestFlight app on the iPhone.
 
