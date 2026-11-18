@@ -37,6 +37,9 @@
 			</array>
 		</dict>
 	</array>
+	<!-- only standard HTTPS (exempt): no export compliance question on every TestFlight upload -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<!-- The agent is reached on the local network (and the USB tunnel on 127.0.0.1). Its certificate is pinned by the

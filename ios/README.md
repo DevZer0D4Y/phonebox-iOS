@@ -30,11 +30,35 @@ xcodegen generate
 open PhoneBox.xcodeproj
 ```
 
-Pick your team under **Signing & Capabilities**, connect the iPhone and press Run. A free Apple ID works; the app then has
+Pick your team under **Signing & Capabilities** (and set `PHONEBOX_BUNDLE_ID` in `project.yml` to your own ID), connect
+the iPhone and press Run. A free Apple ID works; the app then has
 to be reinstalled every 7 days. The app runs on iOS 15 and later (iPhone 6s and newer, iPad 5th generation and newer).
 
 CI (`.github/workflows/ios.yml`) builds it for the simulator and uploads an unsigned `.ipa` that can be signed and
 sideloaded (AltStore, Sideloadly, …).
+
+## Install it as an app
+
+iOS installs only apps signed by Apple, so there are three ways to get PhoneBox onto an iPhone:
+
+**TestFlight (recommended; needs a paid Apple Developer account, $99/year).** The app then installs and updates like
+any App Store app, through Apple's TestFlight app, and it never expires.
+
+1. In [App Store Connect](https://appstoreconnect.apple.com) › Apps, create a new app with your own bundle ID, e.g.
+   `com.yourname.phonebox` (register it, and `com.yourname.phonebox.control` for the Control Center control, under
+   Certificates, Identifiers & Profiles if it isn't offered).
+2. Users and Access › Integrations › App Store Connect API: create a key with the **App Manager** role and download it.
+3. In this GitHub repository, Settings › Secrets and variables › Actions, add `APPLE_TEAM_ID`, `IOS_BUNDLE_ID`,
+   `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the .p8 file, base64-encoded: `base64 -i AuthKey_XXXX.p8`).
+4. Actions › **ios-release** › Run workflow, with a build number (1, then 2, …).
+5. After Apple has processed it (a few minutes), add yourself as a tester in App Store Connect › TestFlight and install
+   PhoneBox from the TestFlight app on the iPhone.
+
+**Sideloading with a free Apple ID.** Download `phonebox-ios-unsigned` from the latest **ios** run in Actions and
+install the `.ipa` with [Sideloadly](https://sideloadly.io) or [AltStore](https://altstore.io). Apps signed with a free
+Apple ID stop opening after 7 days and must be re-installed (AltStore does that by itself).
+
+**Xcode.** Build it yourself as described above and run it on the connected iPhone.
 
 ## Connect it to the computer
 
